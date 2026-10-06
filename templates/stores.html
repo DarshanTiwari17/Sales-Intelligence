@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block title %}Store Performance{% endblock %}{% block content %}
+<h1>Store Performance</h1><p class="sub">Compare the performance of different stores.</p>
+<div class="card"><label>Select Store</label><select id="s" style="min-width:200px"></select></div>
+<div id="out"></div>
+<script>
+const fmt=n=>'$'+Number(n).toLocaleString(undefined,{maximumFractionDigits:0});let t1,t2;
+fetch('/api/meta').then(r=>r.json()).then(m=>{m.stores.forEach(x=>s.insertAdjacentHTML('beforeend',`<option>Store ${x}</option>`));s.addEventListener('change',load);load()});
+function load(){const id=s.value.replace('Store ','');
+fetch('/api/store/'+id).then(r=>r.json()).then(d=>{
+out.innerHTML=`<h2>Store Summary — Store ${d.store} <span class="badge">Rank #${d.rank} / ${d.n_stores} Stores</span></h2>
+<div class="kpis"><div class="card kpi"><div class="label">Store Type / Size</div><div class="value" style="font-size:18px">Type ${d.type} · ${Number(d.size).toLocaleString()} sq ft</div></div>
+<div class="card kpi"><div class="label">Total Sales</div><div class="value">${fmt(d.total)}</div></div>
+<div class="card kpi"><div class="label">Average Weekly Sales</div><div class="value">${fmt(d.avg_weekly)}</div></div>
+<div class="card kpi"><div class="label">Best Dept / Best Week</div><div class="value" style="font-size:18px">Dept ${d.best_dept} · ${d.best_week}</div></div></div>
+<h2>Store Sales Trend</h2><div class="card"><canvas id="t1"></canvas></div>
+<h2>Department Performance</h2><p class="helper">Sales by department for this store.</p><div class="card"><canvas id="t2"></canvas></div>`;
+if(t1)t1.destroy();if(t2)t2.destroy();
+t1=new Chart(document.getElementById('t1'),{type:'line',data:{labels:d.trend.dates,datasets:[{data:d.trend.sales,borderColor:'#2563eb',pointRadius:0,borderWidth:2}]},options:{plugins:{legend:{display:false}}}});
+t2=new Chart(document.getElementById('t2'),{type:'bar',data:{labels:d.bydept.labels,datasets:[{data:d.bydept.sales,backgroundColor:'#60a5fa'}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});});}
+</script>{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% block title %}Overview - Walmart Sales Intelligence{% endblock %}
+{% block content %}
+<h1>Walmart Sales Intelligence</h1><p class="sub">Analyze historical sales and forecast future weekly sales</p>
+<div class="kpis">
+<div class="card kpi"><div class="label">Total Sales</div><div class="value" id="k1">—</div></div>
+<div class="card kpi"><div class="label">Average Weekly Sales</div><div class="value" id="k2">—</div></div>
+<div class="card kpi"><div class="label">Number of Stores</div><div class="value" id="k3">—</div></div>
+<div class="card kpi"><div class="label">Number of Departments</div><div class="value" id="k4">—</div></div></div>
+<h2>Weekly Sales Trend</h2><p class="helper">Shows how total Walmart sales changed over time.</p>
+<div class="card"><canvas id="trend"></canvas></div>
+<div class="grid2">
+<div><h2>Top Performing Stores</h2><div class="card"><table id="ts"><tr><th>Rank</th><th>Store</th><th>Total Sales</th><th>Avg Weekly Sales</th></tr></table></div></div>
+<div><h2>Top Performing Departments</h2><div class="card"><table id="td"><tr><th>Rank</th><th>Department</th><th>Total Sales</th><th>Avg Weekly Sales</th></tr></table></div></div></div>
+<script>
+const fmt=n=>'$'+Number(n).toLocaleString(undefined,{maximumFractionDigits:0});
+fetch('/api/kpis').then(r=>r.json()).then(k=>{k1.textContent=fmt(k.total_sales);k2.textContent=fmt(k.avg_weekly_sales);k3.textContent=k.n_stores;k4.textContent=k.n_depts});
+fetch('/api/weekly_trend').then(r=>r.json()).then(d=>{new Chart(trend,{type:'line',data:{labels:d.dates,datasets:[{data:d.sales,borderColor:'#2563eb',pointRadius:0,borderWidth:2}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)+' on '+c.label}}},scales:{x:{ticks:{maxTicksLimit:8}}}}})});
+fetch('/api/top').then(r=>r.json()).then(d=>{
+d.stores.slice(0,8).forEach((s,i)=>ts.insertAdjacentHTML('beforeend',`<tr><td>${i+1}</td><td>Store ${s.store}</td><td>${fmt(s.total)}</td><td>${fmt(s.avg)}</td></tr>`));
+d.depts.slice(0,8).forEach((s,i)=>td.insertAdjacentHTML('beforeend',`<tr><td>${i+1}</td><td>Dept ${s.dept}</td><td>${fmt(s.total)}</td><td>${fmt(s.avg)}</td></tr>`));});
+</script>{% endblock %}

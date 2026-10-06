@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}Sales Prediction{% endblock %}{% block content %}
+<h1>Sales Prediction</h1><p class="sub">Estimate expected weekly sales using historical Walmart data.</p>
+<div class="card"><div class="form-grid">
+<div><label>Store</label><select id="pstore"></select></div>
+<div><label>Department</label><select id="pdept"></select></div>
+<div><label>Date (future week)</label><input type="date" id="pdate" value="2012-11-02"></div>
+<div><label>Holiday week?</label><select id="phol"><option value="no">No</option><option value="yes">Yes</option></select></div>
+<div><label>Temperature (°F)</label><input type="number" id="ptemp" value="65" step="0.1"></div>
+<div><label>Fuel Price ($)</label><input type="number" id="pfuel" value="3.6" step="0.01"></div>
+<div><label>CPI</label><input type="number" id="pcpi" value="180" step="0.1"></div>
+<div><label>Unemployment (%)</label><input type="number" id="punemp" value="7.5" step="0.1"></div>
+<div><label>Markdowns (1–5, comma separated)</label><input id="pmd" value="0,0,0,0,0"></div>
+</div><br><button class="btn" onclick="go()">Predict Sales</button>
+<div class="note">Estimates are based on historical patterns — not guaranteed. Model: <b id="bmodel">…</b></div></div>
+<div class="result" id="res" style="display:none"><div style="color:#64748b;font-size:14px">Expected Weekly Sales</div>
+<div class="amount" id="amt"></div><div id="rng" style="margin-top:6px;color:#334155"></div>
+<p class="helper" style="margin-top:10px">Based on historical sales patterns for this store and department and the selected conditions.</p></div>
+<script>
+const fmt=n=>'$'+Number(n).toLocaleString(undefined,{maximumFractionDigits:0});
+fetch('/api/meta').then(r=>r.json()).then(m=>{m.stores.forEach(x=>pstore.insertAdjacentHTML('beforeend',`<option>${x}</option>`));m.depts.forEach(x=>pdept.insertAdjacentHTML('beforeend',`<option>${x}</option>`))});
+fetch('/api/metrics').then(r=>r.json()).then(m=>{bmodel.textContent=m.best_model||'not trained yet'});
+function go(){const md=pmd.value.split(',').map(Number);
+fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({store:pstore.value,dept:pdept.value,date:pdate.value,is_holiday:phol.value,temperature:+ptemp.value,fuel_price:+pfuel.value,cpi:+pcpi.value,unemployment:+punemp.value,md1:md[0]||0,md2:md[1]||0,md3:md[2]||0,md4:md[3]||0,md5:md[4]||0})}).then(r=>r.json()).then(d=>{
+if(d.error){alert(d.error);return}res.style.display='block';amt.textContent=fmt(d.prediction);rng.textContent=`Expected range: ${fmt(d.low)} – ${fmt(d.high)}  (model: ${d.model})`});}
+</script>{% endblock %}

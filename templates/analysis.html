@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block title %}Sales Analysis{% endblock %}{% block content %}
+<h1>Sales Analysis</h1><p class="sub">Understand how Walmart sales change over time and across different conditions.</p>
+<div class="card"><div class="filters">
+<div><label>Store</label><select id="fstore"><option value="all">All Stores</option></select></div>
+<div><label>Department</label><select id="fdept"><option value="all">All Departments</option></select></div>
+<div><label>Year</label><select id="fyear"><option value="all">All Years</option></select></div>
+<div><label>Holiday</label><select id="fhol"><option value="all">All Weeks</option><option value="yes">Holiday weeks</option><option value="no">Non-holiday weeks</option></select></div>
+</div></div>
+<h2>Sales Over Time</h2><div class="card"><canvas id="c1"></canvas></div>
+<div class="grid2"><div><h2>Holiday vs Normal Sales</h2><p class="helper">Holiday weeks usually have higher sales.</p><div class="card"><canvas id="c2"></canvas></div></div>
+<div><h2>Monthly Sales</h2><div class="card"><canvas id="c3"></canvas></div></div></div>
+<h2>Sales by Department</h2><div class="card"><canvas id="c4"></canvas></div>
+<script>
+let ch={};const fmt=n=>'$'+Number(n).toLocaleString(undefined,{maximumFractionDigits:0});
+fetch('/api/meta').then(r=>r.json()).then(m=>{m.stores.forEach(s=>fstore.insertAdjacentHTML('beforeend',`<option>${s}</option>`));m.depts.forEach(d=>fdept.insertAdjacentHTML('beforeend',`<option>${d}</option>`));m.years.forEach(y=>fyear.insertAdjacentHTML('beforeend',`<option>${y}</option>`));load()});
+[fstore,fdept,fyear,fhol].forEach(e=>e.addEventListener('change',load));
+function mk(id,cfg){if(ch[id])ch[id].destroy();ch[id]=new Chart(document.getElementById(id),cfg)}
+function load(){const q=`store=${fstore.value}&dept=${fdept.value}&year=${fyear.value}&holiday=${fhol.value}`;
+fetch('/api/analysis?'+q).then(r=>r.json()).then(d=>{
+mk('c1',{type:'line',data:{labels:d.trend.dates,datasets:[{data:d.trend.sales,borderColor:'#2563eb',pointRadius:0,borderWidth:2}]},options:{plugins:{legend:{display:false}}}});
+mk('c2',{type:'bar',data:{labels:d.holiday.labels,datasets:[{data:d.holiday.sales,backgroundColor:['#2563eb','#93c5fd']}]},options:{plugins:{legend:{display:false}}}});
+mk('c3',{type:'bar',data:{labels:d.monthly.labels,datasets:[{data:d.monthly.sales,backgroundColor:'#2563eb'}]},options:{plugins:{legend:{display:false}}}});
+mk('c4',{type:'bar',data:{labels:d.bydept.labels,datasets:[{data:d.bydept.sales,backgroundColor:'#60a5fa'}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});});}
+</script>{% endblock %}

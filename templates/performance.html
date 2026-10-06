@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}Model Performance{% endblock %}{% block content %}
+<h1>Model Performance</h1><p class="sub">We tested three simple models on past data. Lower error is better; R² closer to 1 is better.</p>
+<div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+<div class="card"><b>Linear Regression</b><p class="helper">Simple statistical model that predicts sales based on relationships between input factors.</p></div>
+<div class="card"><b>Random Forest</b><p class="helper">Combines many decision trees to make a stronger prediction.</p></div>
+<div class="card"><b>XGBoost</b><p class="helper">A powerful tree-based model that learns complex relationships in the data.</p></div></div>
+<h2>Model Comparison <span class="badge" id="best"></span></h2>
+<div class="card"><table id="mt"><tr><th>Model</th><th>MAE (avg error)</th><th>RMSE (large-error penalty)</th><th>R² (fit quality)</th></tr></table></div>
+<div class="grid2"><div><h2>MAE Comparison</h2><div class="card"><canvas id="m1"></canvas></div></div>
+<div><h2>R² Comparison</h2><div class="card"><canvas id="m2"></canvas></div></div></div>
+<h2>Actual vs Predicted Sales</h2><p class="helper">The closer the points are to the diagonal line, the better the model's predictions.</p>
+<div class="card"><canvas id="m3"></canvas></div>
+<div class="note"><b>How we tested:</b> <span id="split"></span> We never give the model the answer (Weekly_Sales) as an input — it only sees Store, Dept, date, holiday, temperature, fuel price, CPI, unemployment and markdowns.</div>
+<script>
+const fmt=n=>'$'+Number(n).toLocaleString(undefined,{maximumFractionDigits:0});
+fetch('/api/metrics').then(r=>r.json()).then(m=>{
+best.textContent='Best Model: '+m.best_model;split.textContent=m.split_info||'';
+Object.entries(m.metrics).forEach(([k,v])=>{mt.insertAdjacentHTML('beforeend',`<tr class="${k===m.best_model?'best':''}"><td><b>${k}</b>${k===m.best_model?' ⭐':''}</td><td>${fmt(v.MAE)}</td><td>${fmt(v.RMSE)}</td><td>${v.R2}</td></tr>`)});
+const names=Object.keys(m.metrics);
+new Chart(m1,{type:'bar',data:{labels:names,datasets:[{data:names.map(k=>m.metrics[k].MAE),backgroundColor:'#2563eb'}]},options:{plugins:{legend:{display:false}}}});
+new Chart(m2,{type:'bar',data:{labels:names,datasets:[{data:names.map(k=>m.metrics[k].R2),backgroundColor:'#16a34a'}]},options:{plugins:{legend:{display:false}}}});
+const a=m.test_actual_sample,b=m.test_pred_sample[m.best_model];
+const pts=a.map((v,i)=>({x:v,y:b[i]}));
+const mn=Math.min(...a),mx=Math.max(...a);
+new Chart(m3,{type:'scatter',data:{datasets:[{label:'Predicted vs Actual',data:pts,backgroundColor:'rgba(37,99,235,.4)',pointRadius:2},{label:'Perfect prediction line',type:'line',data:[{x:mn,y:mn},{x:mx,y:mx}],borderColor:'#ef4444',borderDash:[6,4],pointRadius:0}]},options:{scales:{x:{title:{display:true,text:'Actual Sales ($)'},ticks:{callback:v=>'$'+Number(v).toLocaleString()}},y:{title:{display:true,text:'Predicted Sales ($)'},ticks:{callback:v=>'$'+Number(v).toLocaleString()}}}}});});
+</script>{% endblock %}

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Walmart Sales Intelligence{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script></head>
+<body><div class="layout">
+<div class="sidebar"><div class="brand">Walmart Sales Intelligence</div><div class="brand-sub">Store Sales Forecasting</div>
+<div class="nav">
+<a href="/" data-p="overview">Overview</a><a href="/analysis" data-p="analysis">Sales Analysis</a>
+<a href="/stores" data-p="stores">Store Performance</a><a href="/predict" data-p="predict">Sales Prediction</a>
+<a href="/performance" data-p="performance">Model Performance</a></div></div>
+<div class="main">{% block content %}{% endblock %}
+<p class="sub" id="dsrc" style="margin-top:30px"></p>
+<script>fetch('/api/meta').then(r=>r.json()).then(m=>{document.getElementById('dsrc').textContent='Data: '+m.data_source+' | '+m.date_min+' to '+m.date_max;
+document.querySelectorAll('.nav a').forEach(a=>{if(a.getAttribute('href')===location.pathname)a.classList.add('active')})});</script></div>
+</div></body></html>
